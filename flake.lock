@@ -7,11 +7,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1751413152,
-        "narHash": "sha256-Tyw1RjYEsp5scoigs1384gIg6e0GoBVjms4aXFfRssQ=",
+        "lastModified": 1777988971,
+        "narHash": "sha256-qIoWPDs+0/8JecyYgE3gpKQxW/4bLW/gp45vow9ioCQ=",
         "owner": "hercules-ci",
         "repo": "flake-parts",
-        "rev": "77826244401ea9de6e3bac47c2db46005e1f30b5",
+        "rev": "0678d8986be1661af6bb555f3489f2fdfc31f6ff",
         "type": "github"
       },
       "original": {
@@ -27,26 +27,26 @@
         ]
       },
       "locked": {
-        "lastModified": 1724364245,
-        "narHash": "sha256-yh7k9o6OrQD4S9FquFGbA+K0kkxtQrAg985wfJ5dns8=",
-        "owner": "cab404",
+        "lastModified": 1779037949,
+        "narHash": "sha256-Qta0IkVA+rqWaHBR9SYmmSj9q3A/AYXljdoDWwTcS7U=",
+        "owner": "DerMaista",
         "repo": "genix7000",
-        "rev": "6d7cccf18a72f13abda97ef675f25c40d415dc39",
+        "rev": "8ca59c00a220c67663198ab8fe17864ccb139d50",
         "type": "github"
       },
       "original": {
-        "owner": "cab404",
+        "owner": "DerMaista",
         "repo": "genix7000",
         "type": "github"
       }
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1751271578,
-        "narHash": "sha256-P/SQmKDu06x8yv7i0s8bvnnuJYkxVGBWLWHaU+tt4YY=",
+        "lastModified": 1778443072,
+        "narHash": "sha256-zi7/fsqM/kFdNuED//4WOCUtezGtKKqRNORjMvfwjnA=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "3016b4b15d13f3089db8a41ef937b13a9e33a8df",
+        "rev": "da5ad661ba4e5ef59ba743f0d112cbc30e474f32",
         "type": "github"
       },
       "original": {

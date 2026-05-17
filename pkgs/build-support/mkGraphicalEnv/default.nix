@@ -7,20 +7,21 @@
 
 oldDrv:
 let
+  prefer = primary: fallback: let p = lib.attrByPath primary null pkgs; in if p != null then p else lib.attrByPath fallback (throw "Missing dependency: ${lib.concatStringsSep "." primary} or ${lib.concatStringsSep "." fallback}") pkgs;
+
   mesaDrivers =
-    pkgs': with pkgs'; [
-      mesa
-      libGL
-      libglvnd
-      xorg.libX11
-      xorg.libXext
-      xorg.libXdamage
-      xorg.libXfixes
-      xorg.libXxf86vm
-      xorg.libXi
-      xorg.libXrandr
-      xorg.libXrender
-      wayland
+    _: [
+      pkgs.mesa
+      pkgs.libGL
+      pkgs.libglvnd
+      (prefer [ "libx11" ] [ "xorg" "libX11" ])
+      (prefer [ "libxext" ] [ "xorg" "libXext" ])
+      (prefer [ "libxdamage" ] [ "xorg" "libXdamage" ])
+      (prefer [ "libxfixes" ] [ "xorg" "libXfixes" ])
+      (prefer [ "libxi" ] [ "xorg" "libXi" ])
+      (prefer [ "libxrandr" ] [ "xorg" "libXrandr" ])
+      (prefer [ "libxrender" ] [ "xorg" "libXrender" ])
+      pkgs.wayland
     ];
 in
 buildFHSEnv {
