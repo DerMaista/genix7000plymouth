@@ -256,6 +256,48 @@
 
                 Plymouth.SetRefreshFunction(refresh_callback);
                 refresh_callback();
+
+                # Password prompt (e.g. LUKS), shown below the animation.
+                # Without these callbacks the prompt is only visible after pressing Esc.
+                promptSprite = Sprite();
+                promptSprite.SetZ(10000);
+                bulletsSprite = Sprite();
+                bulletsSprite.SetZ(10000);
+                promptY = frameSprite.GetY() + frameImages[0].GetHeight() + 30;
+
+                fun display_password_callback (prompt, bullets)
+                {
+                  promptImage = Image.Text(prompt, 1, 1, 1);
+                  promptSprite.SetImage(promptImage);
+                  promptSprite.SetX(Window.GetX() + Window.GetWidth(0) / 2 - promptImage.GetWidth() / 2);
+                  promptSprite.SetY(promptY);
+                  promptSprite.SetOpacity(1);
+
+                  text = "";
+                  for (i = 0; i < bullets; i++)
+                  {
+                    text = text + "*";
+                  }
+                  if (bullets > 0)
+                  {
+                    bulletsImage = Image.Text(text, 1, 1, 1);
+                    bulletsSprite.SetImage(bulletsImage);
+                    bulletsSprite.SetX(Window.GetX() + Window.GetWidth(0) / 2 - bulletsImage.GetWidth() / 2);
+                    bulletsSprite.SetY(promptY + promptImage.GetHeight() + 10);
+                    bulletsSprite.SetOpacity(1);
+                  }
+                  else
+                    bulletsSprite.SetOpacity(0);
+                }
+
+                fun display_normal_callback ()
+                {
+                  promptSprite.SetOpacity(0);
+                  bulletsSprite.SetOpacity(0);
+                }
+
+                Plymouth.SetDisplayPasswordFunction(display_password_callback);
+                Plymouth.SetDisplayNormalFunction(display_normal_callback);
               '';
               themeScriptFile = prev.writeText "${name}.script" themeScript;
             in
@@ -264,6 +306,7 @@
                 final.genix-to-image
                 final.ffmpeg
               ];
+              passthru.themeName = name;
             } (
               ''
                 themeDir="$out/share/plymouth/themes/${name}"
@@ -289,8 +332,67 @@
                 EOF
               ''
             );
+          mkGenixPlymouthPreview =
+            theme:
+            let
+              name = theme.themeName;
+              plymouthdConf = prev.writeText "plymouthd.conf" ''
+                [Daemon]
+                Theme=${name}
+                ShowDelay=0
+              '';
+              inner = prev.writeShellApplication {
+                name = "${name}-preview-inner";
+                runtimeInputs = [ prev.plymouth prev.coreutils ];
+                text = ''
+                  log="$1"
+                  # --debug spams stderr until it switches to the debug file
+                  plymouthd --no-daemon --debug --debug-file="$log" 2>/dev/null &
+                  plymouthdPid=$!
+                  trap 'plymouth quit 2>/dev/null || true; wait "$plymouthdPid" 2>/dev/null || true' EXIT
+                  until plymouth --ping; do
+                    if ! kill -0 "$plymouthdPid" 2>/dev/null; then
+                      echo "plymouthd exited early, see $log" >&2
+                      exit 1
+                    fi
+                    sleep 0.1
+                  done
+
+                  plymouth show-splash
+                  echo "Showing animation for ''${PREVIEW_DELAY:-3}s..."
+                  sleep "''${PREVIEW_DELAY:-3}"
+
+                  echo "Asking for password, type into the plymouth window and press Enter"
+                  password=$(plymouth ask-for-password --prompt="Please enter passphrase for disk cryptroot:" || true)
+                  echo "Got ''${#password} characters"
+
+                  echo "Back to normal display for 3s..."
+                  sleep 3
+                '';
+              };
+            in
+            prev.writeShellApplication {
+              name = "${name}-preview";
+              runtimeInputs = [ prev.bubblewrap prev.coreutils ];
+              text = ''
+                if [[ -z "''${DISPLAY:-}" ]]; then
+                  echo "DISPLAY is not set, the preview needs an X11 (or Xwayland) display" >&2
+                  exit 1
+                fi
+                log=$(mktemp -t ${name}-preview.XXXXXX.log)
+                bwrap \
+                  --unshare-user --uid 0 --gid 0 \
+                  --dev-bind / / \
+                  --tmpfs /etc/plymouth \
+                  --ro-bind ${plymouthdConf} /etc/plymouth/plymouthd.conf \
+                  --tmpfs /run/plymouth \
+                  --ro-bind ${prev.plymouth}/lib/plymouth /run/plymouth/plugins \
+                  --ro-bind ${theme}/share/plymouth/themes /run/plymouth/themes \
+                  ${prev.lib.getExe inner} "$log"
+                echo "plymouthd debug log (script errors end up here): $log"
+              '';
+            };
         };
-        # System doesn't matter here, only overlays do
         inherit (import nixpkgs { system = "x86_64-linux"; overlays = [ overlay ]; }) lib;
         validateArgs =
           args: argsType:
@@ -411,6 +513,7 @@
         systems = nixpkgs.lib.platforms.linux;
         perSystem =
           {
+            config,
             system,
             pkgs,
             lib,
@@ -436,8 +539,9 @@
                 baseArgs = {
                   rainbow = false;
                 };
-                
+
               };
+              preview = pkgs.mkGenixPlymouthPreview config.packages.testGenixPlymouthTheme;
             };
           };
         flake = {
