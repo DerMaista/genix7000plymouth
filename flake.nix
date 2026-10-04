@@ -380,7 +380,10 @@
                   exit 1
                 fi
                 log=$(mktemp -t ${name}-preview.XXXXXX.log)
+                # --new-session detaches from the calling terminal, otherwise plymouthd
+                # grabs it via /dev/tty (raw mode, clear screen, hidden cursor, ...)
                 bwrap \
+                  --new-session \
                   --unshare-user --uid 0 --gid 0 \
                   --dev-bind / / \
                   --tmpfs /etc/plymouth \
